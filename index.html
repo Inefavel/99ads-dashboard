@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>99Ads — Campaign Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --yellow: #FFD400;
+  --yellow-dark: #E6BC00;
+  --yellow-bg: #FFF8CC;
+  --yellow-text: #7A5F00;
+  --black: #111111;
+  --bg: #F7F7F5;
+  --surface: #FFFFFF;
+  --surface2: #F4F4F4;
+  --border: rgba(0,0,0,0.08);
+  --text: #111111;
+  --text-muted: #666666;
+  --text-dim: #999999;
+  --green: #16A34A;
+  --green-bg: rgba(22,163,74,0.1);
+  --blue: #2563EB;
+  --red: #DC2626;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── HEADER RESPONSIVO ── */
+.header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 0; z-index: 100; }
+@media (min-width: 768px) {
+  .header { flex-direction: row; align-items: center; justify-content: space-between; height: 65px; padding: 0 32px; }
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+.header-logo { width: 36px; height: 36px; background: var(--yellow); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--black); flex-shrink: 0; }
+.header-title { font-size: 15px; font-weight: 600; }
+.header-subtitle { font-size: 12px; color: var(--text-muted); }
+.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* ── CHIPS E BOTÕES ── */
+.chip { background: var(--yellow-bg); border: 1px solid rgba(255,212,0,0.45); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 500; color: var(--yellow-text); white-space: nowrap; }
+.pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.pill span { color: var(--text); font-weight: 500; }
+.btn-yellow { background: var(--yellow); border: none; border-radius: var(--radius); color: var(--black); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 14px; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+.btn-yellow:hover { background: var(--yellow-dark); }
+.btn-ghost { background: transparent; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 12px; padding: 6px 12px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-back { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 12px; padding: 6px 14px; cursor: pointer; transition: all 0.15s; }
+.btn-back:hover { background: var(--surface2); color: var(--text); }
+
+/* ── LOGIN RESPONSIVO ── */
+#screen-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 20px; }
+.login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 40px 24px; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+@media (min-width: 480px) { .login-card { padding: 48px 40px; } }
+.login-logo { width: 64px; height: 64px; background: var(--yellow); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: var(--black); margin: 0 auto 28px; }
+.login-card h1 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+.login-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 32px; }
+.login-card input { width: 100%; padding: 12px 16px; background: var(--surface2); border: 1px solid rgba(0,0,0,0.1); border-radius: var(--radius); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; margin-bottom: 12px; outline: none; transition: border-color 0.15s; }
+.login-card input:focus { border-color: var(--yellow); }
+.login-card .btn-login { width: 100%; padding: 12px; background: var(--yellow); color: var(--black); border: none; border-radius: var(--radius); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.login-card .btn-login:hover { background: var(--yellow-dark); }
+.login-error { color: var(--red); font-size: 12px; margin-top: 8px; min-height: 16px; }
+
+/* ── ELEMENTOS DE LAYOUT PRINCIPAL ── */
+#screen-overview, #screen-detail { display: none; }
+.main { padding: 20px 16px; max-width: 1280px; margin: 0 auto; }
+@media (min-width: 768px) { .main { padding: 28px 32px; } }
+.section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 14px; margin-top: 14px; }
+
+/* ── CAMPAIGN CARDS GRID ── */
+.campaign-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 32px; }
+@media (min-width: 768px) { .campaign-grid { grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); } }
+
+.campaign-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+@media (min-width: 480px) { .campaign-card { padding: 24px; } }
+.campaign-card:hover { border-color: var(--yellow); box-shadow: 0 4px 16px rgba(255,212,0,0.12); }
+
+.cc-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
+.cc-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.cc-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+.cc-tag { background: var(--surface2); border-radius: 6px; padding: 2px 8px; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.cc-tag-yellow { background: var(--yellow-bg); color: var(--yellow-text); border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+.cc-arrow { color: var(--text-dim); font-size: 18px; margin-left: 8px; transition: transform 0.15s; }
+.campaign-card:hover .cc-arrow { transform: translateX(3px); color: var(--yellow-text); }
+
+.cc-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 18px; }
+@media (min-width: 480px) { .cc-kpis { grid-template-columns: repeat(4, 1fr); } }
+.cc-kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 3px; }
+.cc-kpi-value { font-size: 18px; font-weight: 700; color: var(--text); }
+.cc-kpi-sub { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+.cc-kpi-value.accent { color: #B8960A; }
+
+.cc-divider { border: none; border-top: 1px solid var(--border); margin: 0 0 16px; }
+
+/* CARD DE COMPARAÇÃO / TABELAS */
+.compare-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 28px; }
+.compare-header { padding: 18px 20px; border-bottom: 1px solid var(--border); }
+.compare-header h2 { font-size: 13px; font-weight: 600; }
+.compare-header p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 800px; }
+thead th { padding: 10px 16px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--text-dim); text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; text-align: right; }
+thead th:first-child, thead th:nth-child(2) { text-align: left; }
+tbody tr { border-bottom: 1px solid rgba(0,0,0,0.04); transition: background 0.1s; cursor: pointer; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,212,0,0.04); }
+tbody td { padding: 13px 16px; white-space: nowrap; text-align: right; }
+tbody td:first-child { text-align: left; font-weight: 600; }
+tbody td:nth-child(2) { text-align: left; color: var(--text-muted); font-size: 12px; }
+.winner { color: var(--green); font-weight: 600; }
+.loser { color: var(--text-muted); }
+
+/* ── DETAIL GRIDS ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 28px; }
+@media (min-width: 640px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1024px) { .kpi-grid { grid-template-columns: repeat(7, 1fr); } }
+
+.kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.kpi-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.kpi-value { font-size: 22px; font-weight: 700; line-height: 1.1; word-break: break-all; }
+.kpi-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+.kpi-accent { color: #B8960A; }
+
+/* CORES DOS GRÁFICOS */
+.charts-row { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 28px; }
+@media (min-width: 992px) { .charts-row { grid-template-columns: 1fr 1fr; } }
+.charts-row.triple { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 768px) { .charts-row.triple { grid-template-columns: repeat(3, 1fr); } }
+
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; width: 100%; position: relative; }
+.chart-title { font-size: 13px; font-weight: 600; }
+.chart-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.legend-row { display: flex; gap: 12px; margin: 10px 0 14px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+.chart-container { position: relative; height: 220px; width: 100%; }
+
+/* DETALHAMENTO DE CONTROLES DIÁRIOS */
+.detail-controls { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; gap: 16px; }
+@media (min-width: 768px) {
+  .detail-controls { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+.detail-controls-left, .detail-controls-right { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+@media (min-width: 480px) {
+  .detail-controls-left, .detail-controls-right { flex-direction: row; align-items: center; }
+}
+@media (min-width: 768px) {
+  .detail-controls-left, .detail-controls-right { width: auto; }
+}
+
+.format-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.format-tab { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-muted); padding: 6px 14px; cursor: pointer; transition: all 0.15s; }
+.format-tab.active { background: var(--yellow); border-color: var(--yellow-dark); color: var(--black); font-weight: 600; }
+
+.period-filter { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; gap: 2px; width: fit-content; }
+.period-btn { background: transparent; border: none; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-muted); padding: 6px 12px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.period-btn.active { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+.period-custom { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.date-input { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text); outline: none; }
+
+/* TABELA DE DETALHES */
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 28px; }
+.table-header { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+@media (min-width: 480px) { .table-header { flex-direction: row; justify-content: space-between; align-items: center; } }
+.table-title { font-size: 13px; font-weight: 600; }
+.table-meta { font-size: 12px; color: var(--text-muted); }
+
+.detail-table min-width { min-width: 700px; }
+.detail-table thead th { text-align: right; }
+.detail-table thead th:first-child { text-align: left; }
+.detail-table tbody td { text-align: right; }
+.detail-table tbody td:first-child { text-align: left; color: var(--text-muted); font-size: 12px; }
+.detail-table tbody tr { cursor: default; }
+
+.ctr-bar-wrap { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.ctr-bar { height: 4px; background: var(--surface2); border-radius: 2px; width: 60px; overflow: hidden; display: none; }
+@media (min-width: 480px) { .ctr-bar { display: block; } }
+.ctr-fill { height: 100%; background: var(--yellow); border-radius: 2px; }
+.freq-badge { display: inline-flex; align-items: center; justify-content: center; background: rgba(37,99,235,0.1); color: #1d4ed8; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+
+/* SEGMENTAÇÃO */
+.seg-toggle-header { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 14px; cursor: pointer; transition: background 0.15s; user-select: none; }
+.seg-toggle-header:hover { background: var(--surface2); }
+.seg-toggle-header.open { border-radius: var(--radius) var(--radius) 0 0; border-bottom-color: transparent; margin-bottom: 0; }
+.seg-chevron { font-size: 20px; color: var(--text-dim); transition: transform 0.2s; line-height: 1; }
+.seg-chevron.open { transform: rotate(90deg); }
+.seg-card { background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); padding: 20px; margin-bottom: 28px; display: flex; flex-direction: column; gap: 20px; }
+@media (min-width: 640px) { .seg-card { flex-direction: row; flex-wrap: wrap; gap: 32px; } }
+.seg-group { min-width: 160px; flex: 1; }
+.seg-group-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 10px; }
+.seg-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg-tag { display: inline-flex; align-items: center; gap: 5px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px; font-size: 12px; color: var(--text); }
+.seg-tag.primary { background: var(--yellow-bg); border-color: rgba(255,212,0,0.4); color: var(--yellow-text); font-weight: 500; }
+.seg-tag.green { background: rgba(22,163,74,0.08); border-color: rgba(22,163,74,0.25); color: #15803d; font-weight: 500; }
+
+/* PACING */
+.pacing-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+@media (min-width: 640px) { .pacing-kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .pacing-kpis { grid-template-columns: repeat(6, 1fr); } }
+.pacing-kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.pacing-kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 4px; }
+.pacing-kpi-value { font-size: 18px; font-weight: 700; color: var(--text); word-break: break-all; }
+.pacing-kpi-sub { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+.pacing-kpi-bar { height: 4px; background: var(--surface2); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.pacing-kpi-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+
+.demo-toggle, .pacing-toggle { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; gap: 2px; width: fit-content; }
+.demo-tab { background: transparent; border: none; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-muted); padding: 6px 14px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.demo-tab.active { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+.demo-badge { display: inline-block; background: rgba(249,115,22,0.1); border: 1px solid rgba(249,115,22,0.25); border-radius: 20px; padding: 2px 10px; font-size: 10px; font-weight: 500; color: #c2410c; margin-left: 8px; vertical-align: middle; }
+
+.ahead { color: var(--green); }
+.behind { color: var(--red); }
+.highlight-row { background: rgba(255,212,0,0.05) !important; }
+</style>
+</head>
+<body>
+
+<div id="screen-login" style="display: flex;">
+  <div class="login-card">
+    <div class="login-logo">99</div>
+    <h1>99Ads Dashboard</h1>
+    <p>Acesse o painel de performance de campanhas</p>
+    <input type="text" id="login-user" placeholder="Usuário" autocomplete="off">
+    <input type="password" id="login-pass" placeholder="Senha">
+    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="login-err"></div>
+  </div>
+</div>
+
+<div id="screen-overview">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">99</div>
+      <div>
+        <div class="header-title">99Ads — Campaign Overview</div>
+        <div class="header-subtitle">Cliente: GM</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="chip">GM &nbsp;·&nbsp; 2 campanhas ativas</div>
+      <button class="btn-ghost" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="section-label">Comparativo entre campanhas</div>
+    <div class="compare-card">
+      <div class="compare-header">
+        <h2>Métricas lado a lado</h2>
+        <p>Clique em uma linha para abrir o detalhamento da campanha</p>
+      </div>
+      <div class="table-responsive">
+        <table id="compare-table">
+          <thead>
+            <tr>
+              <th style="text-align:left">Campanha</th>
+              <th style="text-align:left">Plano</th>
+              <th>Impressões Contratadas</th>
+              <th>Impressões Realizadas</th>
+              <th>Cliques</th>
+              <th>CTR Total</th>
+              <th>CPC Total</th>
+              <th>Alcance Único</th>
+              <th>Freq.</th>
+              <th>CPM</th>
+            </tr>
+          </thead>
+          <tbody id="compare-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-label">Campanhas</div>
+    <div class="campaign-grid" id="campaign-grid"></div>
+
+    <div class="section-label">CTR Total — comparativo diário</div>
+    <div class="chart-card" style="margin-bottom:28px">
+      <div class="legend-row" id="compare-legend"></div>
+      <div class="chart-container" style="height: 280px;">
+        <canvas id="chartCompare" role="img" aria-label="CTR comparativo entre campanhas"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-detail">
+  <div class="header">
+    <div class="header-left" style="flex-wrap: wrap; gap: 10px;">
+      <button class="btn-back" onclick="goBack()">&#8592; Voltar</button>
+      <div class="header-logo">99</div>
+      <div>
+        <div class="header-title" id="detail-header-title">99Ads — Campaign Report</div>
+        <div class="header-subtitle" id="detail-header-sub"></div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="chip" id="detail-chip"></div>
+      <div class="pill" id="detail-pill-cpm">CPM: <span id="detail-cpm-val"></span></div>
+      <button class="btn-yellow" onclick="exportCSV()">&#8595; CSV</button>
+      <button class="btn-yellow" onclick="exportPDF()">&#8595; PDF</button>
+      <button class="btn-ghost" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="detail-controls">
+      <div class="detail-controls-left">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-right:8px; white-space:nowrap;">Formato</div>
+        <div class="format-tabs" id="format-tabs"></div>
+      </div>
+      <div class="detail-controls-right">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-right:8px; white-space:nowrap;">Período</div>
+        <div class="period-filter" id="period-filter">
+          <button class="period-btn active" id="pbtn-all" onclick="setPeriod('all')">Todos</button>
+          <button class="period-btn" id="pbtn-7d" onclick="setPeriod('7d')">Últimos 7d</button>
+          <button class="period-btn" id="pbtn-custom" onclick="toggleCustomPeriod()">Personalizado</button>
+        </div>
+        <div class="period-custom" id="period-custom" style="display:none">
+          <input type="date" id="period-from" onchange="applyCustomPeriod()" class="date-input">
+          <span style="color:var(--text-dim);font-size:12px">até</span>
+          <input type="date" id="period-to" onchange="applyCustomPeriod()" class="date-input">
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Resumo da campanha — período selecionado</div>
+    <div class="kpi-grid" id="detail-kpis"></div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Impressões e cliques por dia</div>
+        <div class="chart-subtitle">Evolução diária</div>
+        <div class="legend-row">
+          <div class="legend-item"><div class="legend-dot" style="background:#FFD400"></div>Impressões</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div>Cliques totais</div>
+        </div>
+        <div class="chart-container"><canvas id="dChartIC"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">CTR diário (%)</div>
+        <div class="chart-subtitle">Taxa de clique por dia</div>
+        <div class="legend-row">
+          <div class="legend-item"><div class="legend-dot" style="background:#16A34A;border-radius:50%"></div>CTR Total</div>
+        </div>
+        <div class="chart-container"><canvas id="dChartCTR"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Frequência por dia</div>
+        <div class="chart-subtitle">Impressões por usuário único</div>
+        <div class="chart-container" style="margin-top:14px"><canvas id="dChartFreq"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">CPC Total vs CPC Único</div>
+        <div class="chart-subtitle">Custo por clique — comparativo</div>
+        <div class="legend-row">
+          <div class="legend-item"><div class="legend-dot" style="background:#FFD400"></div>CPC Total</div>
+        </div>
+        <div class="chart-container"><canvas id="dChartCPC"></canvas></div>
+      </div>
+    </div>
+
+    <div class="seg-toggle-header" onclick="toggleSeg()">
+      <div style="display:flex;align-items:center;gap:8px; flex-wrap: wrap;">
+        <span class="section-label" style="margin-bottom:0; margin-top:0;">Segmentação da campanha</span>
+        <span style="font-size:11px;color:var(--text-dim);font-weight:400;text-transform:none;letter-spacing:0">— clique para expandir</span>
+      </div>
+      <span class="seg-chevron" id="seg-chevron">&#8250;</span>
+    </div>
+    <div class="seg-card" id="detail-seg" style="display:none"></div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px; margin-top:20px; flex-wrap: wrap;">
+      <div class="demo-toggle" id="demo-toggle">
+        <button class="demo-tab active" id="tab-impr" onclick="switchDemoTab('impr')">👁 Impactados</button>
+        <button class="demo-tab" id="tab-click" onclick="switchDemoTab('click')">👆 Clicaram</button>
+      </div>
+      <div class="section-label" style="margin-bottom:0; margin-top:0;">Perfil demográfico <span class="demo-badge">Dados simulados</span></div>
+    </div>
+    
+    <div class="charts-row triple">
+      <div class="chart-card">
+        <div class="chart-title">Gênero</div>
+        <div class="chart-subtitle" id="demo-sub-gender">% por gênero</div>
+        <div class="chart-container" style="margin-top:10px"><canvas id="dChartGender"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Faixa etária</div>
+        <div class="chart-subtitle" id="demo-sub-age">% por idade</div>
+        <div class="chart-container" style="margin-top:10px"><canvas id="dChartAge"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Top estados</div>
+        <div class="chart-subtitle" id="demo-sub-state">% por UF</div>
+        <div class="chart-container" style="margin-top:10px"><canvas id="dChartState"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:28px; margin-top:16px;">
+      <div class="chart-title">Top cidades</div>
+      <div class="chart-subtitle" id="demo-sub-city">% por município</div>
+      <div class="chart-container" style="margin-top:14px"><canvas id="dChartCity"></canvas></div>
+    </div>
+
+    <div class="section-label">Projetado vs. Realizado</div>
+    <div class="pacing-kpis" id="pacing-kpis"></div>
+    <div class="chart-card" style="margin-bottom:28px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px; flex-wrap: wrap; gap:12px;">
+        <div>
+          <div class="chart-title">Impressões — projetado vs. realizado (acumulado)</div>
+          <div class="chart-subtitle">Linha sólida = realizado · Linha tracejada = meta diária acumulada</div>
+        </div>
+        <div class="pacing-toggle" id="pacing-toggle">
+          <button class="demo-tab active" id="ptab-impr" onclick="switchPacingTab('impr')">Impressões</button>
+          <button class="demo-tab" id="ptab-click" onclick="switchPacingTab('click')">Cliques</button>
+        </div>
+      </div>
+      <div class="legend-row" style="margin-top:12px">
+        <div class="legend-item"><div class="legend-dot" style="background:#111;border-radius:50%"></div>Realizado (acumulado)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ccc;border-radius:50%"></div>Meta (acumulado)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(59,130,246,0.5)"></div>Realizado diário</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(200,200,200,0.5)"></div>Meta diária</div>
+      </div>
+      <div class="chart-container" style="height:320px; margin-top:8px"><canvas id="dChartPacing"></canvas></div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Detalhamento por Dia — Journey Breakdown</div>
+        <div class="table-meta" id="detail-table-meta"></div>
+      </div>
+      <div class="table-responsive">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th style="text-align:left">Data</th>
+              <th>Impressões</th><th>Cliques</th><th>CTR Total</th><th>CPC Total</th>
+              <th>Alcance Único</th><th>Freq.</th>
+            </tr>
+          </thead>
+          <tbody id="detail-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var PASSWORD = "99ads";
+var activeCharts = [];
+var currentCampaignIndex = 0;
+
+var campaigns = [
+  {
+    id: 0,
+    name: "Move Brasil 2026",
+    plano: "Home",
+    cliente: "GM",
+    cpm: "R$325,00",
+    periodo: "12/06/2026 – 26/07/2026",
+    color: "#FFD400",
+    segmentation: {
+      audience:  ["Motoristas 99", "Inscritos Move Brasil", "Aprovados no programa", "Carro próprio"],
+      vehicle:   ["Carro próprio (pessoa física)", "Ano de fabricação ≥ 2015"],
+      status:    ["Motorista ativo (≥4 corridas/semana)", "Elegível BNDES/Finame"],
+      geography: ["Nacional", "3.000+ municípios"],
+      format:    ["Home Takeover", "Full-screen", "Impressão na abertura do app"]
+    },
+    demographics: {
+      impr: {
+        gender:  [{ label: "Masculino", value: 82 }, { label: "Feminino", value: 16 }, { label: "Não informado", value: 2 }],
+        age:     [{ label: "18–24", value: 8 }, { label: "25–34", value: 31 }, { label: "35–44", value: 34 }, { label: "45–54", value: 19 }, { label: "55+", value: 8 }],
+        states:  [{ label: "SP", value: 34 }, { label: "RJ", value: 18 }, { label: "MG", value: 12 }, { label: "PR", value: 8 }, { label: "RS", value: 7 }, { label: "BA", value: 6 }, { label: "Outros", value: 15 }],
+        cities:  [{ label: "São Paulo", value: 22 }, { label: "Rio de Janeiro", value: 14 }, { label: "Belo Horizonte", value: 8 }, { label: "Curitiba", value: 6 }, { label: "Porto Alegre", value: 5 }, { label: "Salvador", value: 5 }, { label: "Campinas", value: 4 }, { label: "Outros", value: 36 }]
+      },
+      click: {
+        gender:  [{ label: "Masculino", value: 79 }, { label: "Feminino", value: 19 }, { label: "Não informado", value: 2 }],
+        age:     [{ label: "18–24", value: 7 }, { label: "25–34", value: 35 }, { label: "35–44", value: 36 }, { label: "45–54", value: 16 }, { label: "55+", value: 6 }],
+        states:  [{ label: "SP", value: 38 }, { label: "RJ", value: 16 }, { label: "MG", value: 10 }, { label: "PR", value: 9 }, { label: "RS", value: 6 }, { label: "BA", value: 5 }, { label: "Outros", value: 16 }],
+        cities:  [{ label: "São Paulo", value: 26 }, { label: "Rio de Janeiro", value: 12 }, { label: "Curitiba", value: 8 }, { label: "Belo Horizonte", value: 7 }, { label: "Campinas", value: 6 }, { label: "Porto Alegre", value: 5 }, { label: "Salvador", value: 4 }, { label: "Outros", value: 32 }]
+      }
+    },
+    plan: {
+      totalImpr: 700000,
+      totalCliques: 98000,
+      startDate: "12/06",
+      endDate: "26/07",
+      totalDays: 45,
+      daily: Array.from({length: 45}, (_, i) => ({ date: `${12+i > 30 ? String((12+i)-30).padStart(2,'0')+'/07' : String(12+i).padStart(2,'0')+'/06'}`, impr: 15556, cliques: 2178 }))
+    },
+    formats: [
+      { id: "home",  label: "Home Takeover",
+        daily: [
+          { date: "12/06", impr: 30387, cliques: 4042, ctrTotal: 13.30, cpcTotal: 3.22, alcance: 18362, freq: 1.66 },
+          { date: "13/06", impr: 27520, cliques: 4140, ctrTotal: 15.04, cpcTotal: 3.49, alcance: 18338, freq: 1.50 },
+          { date: "14/06", impr: 25630, cliques: 3644, ctrTotal: 14.22, cpcTotal: 3.69, alcance: 13355, freq: 1.92 },
+          { date: "15/06", impr: 23998, cliques: 3780, ctrTotal: 15.75, cpcTotal: 3.33, alcance: 19520, freq: 1.23 },
+          { date: "16/06", impr: 23449, cliques: 3136, ctrTotal: 13.63, cpcTotal: 3.93, alcance: 19415, freq: 1.21 },
+          { date: "17/06", impr: 23705, cliques: 2798, ctrTotal: 11.80, cpcTotal: 4.45, alcance: 18437, freq: 1.29 }
+        ]
+      }
+    ],
+    summary: { impr: 154667, cliques: 22440, ctrTotal: 14.51, cpcTotal: 3.62, alcance: 65753, freq: 2.50 },
+    daily: [
+      { date: "12/06", impr: 30387, cliques: 4042, ctrTotal: 13.30, cpcTotal: 3.22, alcance: 18362, freq: 1.66 },
+      { date: "13/06", impr: 27520, cliques: 4140, ctrTotal: 15.04, cpcTotal: 3.49, alcance: 18338, freq: 1.50 },
+      { date: "14/06", impr: 25630, cliques: 3644, ctrTotal: 14.22, cpcTotal: 3.69, alcance: 13355, freq: 1.92 },
+      { date: "15/06", impr: 23998, cliques: 3780, ctrTotal: 15.75, cpcTotal: 3.33, alcance: 19520, freq: 1.23 },
+      { date: "16/06", impr: 23449, cliques: 3136, ctrTotal: 13.63, cpcTotal: 3.93, alcance: 19415, freq: 1.21 },
+      { date: "17/06", impr: 23705, cliques: 2798, ctrTotal: 11.80, cpcTotal: 4.45, alcance: 18437, freq: 1.29 }
+    ]
+  },
+  {
+    id: 1,
+    name: "Move Brasil 2026",
+    plano: "Pop-Up",
+    cliente: "GM",
+    cpm: "R$450,00",
+    periodo: "12/06/2026 – 26/07/2026",
+    color: "#3B82F6",
+    segmentation: {
+      audience:  ["Motoristas 99", "Inscritos Move Brasil", "Aprovados no programa", "Carro próprio"],
+      vehicle:   ["Carro próprio (pessoa física)", "Ano de fabricação ≥ 2015"],
+      status:    ["Motorista ativo (≥4 corridas/semana)", "Elegível BNDES/Finame"],
+      geography: ["Nacional", "3.000+ municípios"],
+      format:    ["Pop-Up", "Interstitial durante corrida", "Aparece ao aceitar chamada"]
+    },
+    demographics: {
+      impr: {
+        gender:  [{ label: "Masculino", value: 85 }, { label: "Feminino", value: 13 }, { label: "Não informado", value: 2 }],
+        age:     [{ label: "18–24", value: 6 }, { label: "25–34", value: 28 }, { label: "35–44", value: 37 }, { label: "45–54", value: 21 }, { label: "55+", value: 8 }],
+        states:  [{ label: "SP", value: 36 }, { label: "RJ", value: 17 }, { label: "MG", value: 11 }, { label: "PR", value: 9 }, { label: "RS", value: 6 }, { label: "CE", value: 5 }, { label: "Outros", value: 16 }],
+        cities:  [{ label: "São Paulo", value: 24 }, { label: "Rio de Janeiro", value: 13 }, { label: "Belo Horizonte", value: 7 }, { label: "Curitiba", value: 7 }, { label: "Fortaleza", value: 5 }, { label: "Porto Alegre", value: 4 }, { label: "Goiânia", value: 4 }, { label: "Outros", value: 36 }]
+      },
+      click: {
+        gender:  [{ label: "Masculino", value: 81 }, { label: "Feminino", value: 17 }, { label: "Não informado", value: 2 }],
+        age:     [{ label: "18–24", value: 9 }, { label: "25–34", value: 33 }, { label: "35–44", value: 38 }, { label: "45–54", value: 15 }, { label: "55+", value: 5 }],
+        states:  [{ label: "SP", value: 40 }, { label: "RJ", value: 15 }, { label: "MG", value: 10 }, { label: "PR", value: 10 }, { label: "RS", value: 5 }, { label: "CE", value: 6 }, { label: "Outros", value: 14 }],
+        cities:  [{ label: "São Paulo", value: 28 }, { label: "Rio de Janeiro", value: 11 }, { label: "Curitiba", value: 8 }, { label: "Fortaleza", value: 7 }, { label: "Belo Horizonte", value: 6 }, { label: "Goiânia", value: 5 }, { label: "Porto Alegre", value: 4 }, { label: "Outros", value: 31 }]
+      }
+    },
+    plan: {
+      totalImpr: 750000,
+      totalCliques: 210000,
+      startDate: "12/06",
+      endDate: "26/07",
+      totalDays: 45,
+      daily: Array.from({length: 45}, (_, i) => ({ date: `${12+i > 30 ? String((12+i)-30).padStart(2,'0')+'/07' : String(12+i).padStart(2,'0')+'/06'}`, impr: 16667, cliques: 4667 }))
+    },
+    formats: [
+      { id: "popup", label: "Pop-Up",
+        daily: [
+          { date: "12/06", impr: 31421, cliques: 12031, ctrTotal: 38.29, cpcTotal: 1.18, alcance: 31415, freq: 1.00 },
+          { date: "13/06", impr: 62,    cliques: 17,    ctrTotal: 27.42, cpcTotal: 1.64, alcance: 62,    freq: 1.00 },
+          { date: "14/06", impr: 33881, cliques: 11879, ctrTotal: 35.06, cpcTotal: 1.28, alcance: 33868, freq: 1.00 },
+          { date: "15/06", impr: 33948, cliques: 9874,  ctrTotal: 29.09, cpcTotal: 1.55, alcance: 33937, freq: 1.00 },
+          { date: "16/06", impr: 33925, cliques: 8597,  ctrTotal: 25.34, cpcTotal: 1.78, alcance: 33918, freq: 1.00 },
+          { date: "17/06", impr: 33933, cliques: 7745,  ctrTotal: 22.82, cpcTotal: 1.97, alcance: 33927, freq: 1.00 }
+        ]
+      }
+    ],
+    summary: { impr: 167170, cliques: 50143, ctrTotal: 30.00, cpcTotal: 1.50, alcance: 94709, freq: 1.77 },
+    daily: [
+      { date: "12/06", impr: 31421, cliques: 12031, ctrTotal: 38.29, cpcTotal: 1.18, alcance: 31415, freq: 1.00 },
+      { date: "13/06", impr: 62,    cliques: 17,    ctrTotal: 27.42, cpcTotal: 1.64, alcance: 62,    freq: 1.00 },
+      { date: "14/06", impr: 33881, cliques: 11879, ctrTotal: 35.06, cpcTotal: 1.28, alcance: 33868, freq: 1.00 },
+      { date: "15/06", impr: 33948, cliques: 9874,  ctrTotal: 29.09, cpcTotal: 1.55, alcance: 33937, freq: 1.00 },
+      { date: "16/06", impr: 33925, cliques: 8597,  ctrTotal: 25.34, cpcTotal: 1.78, alcance: 33918, freq: 1.00 },
+      { date: "17/06", impr: 33933, cliques: 7745,  ctrTotal: 22.82, cpcTotal: 1.97, alcance: 33927, freq: 1.00 }
+    ]
+  }
+];
+
+/* ── NAVEGAÇÃO ── */
+function show(id) {
+  ["screen-login","screen-overview","screen-detail"].forEach(function(s) {
+    document.getElementById(s).style.display = "none";
+  });
+  document.getElementById(id).style.display = "block";
+}
+
+function doLogin() {
+  var pass = document.getElementById("login-pass").value;
+  if (pass === PASSWORD) {
+    show("screen-overview");
+    buildOverview();
+  } else {
+    document.getElementById("login-err").textContent = "Senha incorreta. Tente novamente.";
+  }
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && document.getElementById("screen-login").style.display !== "none") doLogin();
+});
+
+function doLogout() {
+  show("screen-login");
+  document.getElementById("login-pass").value = "";
+  document.getElementById("login-err").textContent = "";
+  document.getElementById("screen-login").style.display = "flex";
+}
+
+function goBack() {
+  destroyCharts();
+  show("screen-overview");
+}
+
+function openCampaign(idx) {
+  currentCampaignIndex = idx;
+  buildDetail(campaigns[idx]);
+  show("screen-detail");
+}
+
+/* ── OVERVIEW ── */
+function buildOverview() {
+  buildCampaignCards();
+  buildCompareTable();
+  buildCompareChart();
+}
+
+function buildCampaignCards() {
+  var grid = document.getElementById("campaign-grid");
+  grid.innerHTML = "";
+  campaigns.forEach(function(c, idx) {
+    var s = c.summary;
+    grid.innerHTML += '<div class="campaign-card" onclick="openCampaign(' + idx + ')">' +
+      '<div class="cc-header">' +
+        '<div>' +
+          '<div class="cc-name">' + c.name + '</div>' +
+          '<div class="cc-meta" style="margin-top:6px">' +
+            '<span class="cc-tag-yellow">' + c.plano + '</span>' +
+            '<span class="cc-tag">' + c.periodo + '</span>' +
+            '<span class="cc-tag">CPM ' + c.cpm + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<span class="cc-arrow">&#8594;</span>' +
+      '</div>' +
+      '<div class="cc-kpis">' +
+        '<div class="cc-kpi"><div class="cc-kpi-label">Impr. Contratadas</div><div class="cc-kpi-value">' + fmt(c.plan.totalImpr) + '</div></div>' +
+        '<div class="cc-kpi"><div class="cc-kpi-label">Impr. Realizadas</div><div class="cc-kpi-value">' + fmt(s.impr) + '</div><div class="cc-kpi-sub">' + Math.round(s.impr/c.plan.totalImpr*100) + '% entregue</div></div>' +
+        '<div class="cc-kpi"><div class="cc-kpi-label">Cliques</div><div class="cc-kpi-value">' + fmt(s.cliques) + '</div></div>' +
+        '<div class="cc-kpi"><div class="cc-kpi-label">CTR Total</div><div class="cc-kpi-value accent">' + s.ctrTotal.toFixed(2) + '%</div></div>' +
+        '<div class="cc-kpi"><div class="cc-kpi-label">CPC Total</div><div class="cc-kpi-value">R$' + s.cpcTotal.toFixed(2) + '</div></div>' +
+        '<div class="cc-kpi"><div class="cc-kpi-label">Alcance Único</div><div class="cc-kpi-value">' + fmt(s.alcance) + '</div></div>' +
+        '<div class="cc-kpi"><div class="cc-kpi-label">Frequência</div><div class="cc-kpi-value">' + s.freq.toFixed(2) + 'x</div></div>' +
+      '</div>' +
+      '<hr class="cc-divider">' +
+      '<div style="font-size:11px;color:var(--text-dim)">Ver detalhamento diário &#8594;</div>' +
+    '</div>';
+  });
+}
+
+function buildCompareTable() {
+  var tbody = document.getElementById("compare-tbody");
+  var html = "";
+
+  campaigns.forEach(function(c, idx) {
+    var s = c.summary;
+    var ctrWin = campaigns[0].summary.ctrTotal >= campaigns[1].summary.ctrTotal ? 0 : 1;
+    var cpcWin = campaigns[0].summary.cpcTotal <= campaigns[1].summary.cpcTotal ? 0 : 1;
+    var pctDel = Math.round(s.impr / c.plan.totalImpr * 100);
+    html += '<tr onclick="openCampaign(' + idx + ')">' +
+      '<td>' + c.name + '</td>' +
+      '<td>' + c.plano + '</td>' +
+      '<td>' + fmt(c.plan.totalImpr) + '</td>' +
+      '<td>' + fmt(s.impr) + ' <span style="font-size:10px;color:var(--text-dim)">(' + pctDel + '%)</span></td>' +
+      '<td>' + fmt(s.cliques) + '</td>' +
+      '<td class="' + (idx === ctrWin ? 'winner' : 'loser') + '">' + s.ctrTotal.toFixed(2) + '%</td>' +
+      '<td class="' + (idx === cpcWin ? 'winner' : 'loser') + '">R$' + s.cpcTotal.toFixed(2) + '</td>' +
+      '<td>' + fmt(s.alcance) + '</td>' +
+      '<td>' + s.freq.toFixed(2) + 'x</td>' +
+      '<td>' + c.cpm + '</td>' +
+    '</tr>';
+  });
+
+  var totalContr  = campaigns.reduce(function(a,c){ return a + c.plan.totalImpr; }, 0);
+  var totalImpr   = campaigns.reduce(function(a,c){ return a + c.summary.impr; }, 0);
+  var totalCliq   = campaigns.reduce(function(a,c){ return a + c.summary.cliques; }, 0);
+  var totalAlc    = campaigns.reduce(function(a,c){ return a + c.summary.alcance; }, 0);
+  var avgCtr      = campaigns.reduce(function(a,c){ return a + c.summary.ctrTotal * c.summary.impr; }, 0) / totalImpr;
+  var totalSpend  = campaigns.reduce(function(a,c){ return a + c.summary.cliques * c.summary.cpcTotal; }, 0);
+  var avgCpc      = totalSpend / totalCliq;
+  var avgFreq     = totalImpr / totalAlc;
+  var pctTot      = Math.round(totalImpr / totalContr * 100);
+
+  html += '<tr style="background:#F7F7F5;border-top:2px solid rgba(0,0,0,0.1);cursor:default" onmouseover="this.style.background=\'#F7F7F5\'" onmouseout="this.style.background=\'#F7F7F5\'">' +
+    '<td style="font-weight:700;color:#111">Total GM</td>' +
+    '<td style="color:var(--text-dim);font-size:11px">' + campaigns.length + ' campanhas</td>' +
+    '<td style="font-weight:600">' + fmt(totalContr) + '</td>' +
+    '<td style="font-weight:600">' + fmt(totalImpr) + ' <span style="font-size:10px;color:var(--text-dim);font-weight:400">(' + pctTot + '%)</span></td>' +
+    '<td style="font-weight:600">' + fmt(totalCliq) + '</td>' +
+    '<td style="font-weight:600">' + avgCtr.toFixed(2) + '%</td>' +
+    '<td style="font-weight:600">R$' + avgCpc.toFixed(2) + '</td>' +
+    '<td style="font-weight:600">' + fmt(totalAlc) + '</td>' +
+    '<td style="font-weight:600">' + avgFreq.toFixed(2) + 'x</td>' +
+    '<td style="color:var(--text-dim)">—</td>' +
+  '</tr>';
+
+  tbody.innerHTML = html;
+}
+
+function buildCompareChart() {
+  var labels = campaigns[0].daily.map(function(d) { return d.date; });
+  var legend = document.getElementById("compare-legend");
+  legend.innerHTML = campaigns.map(function(c) {
+    return '<div class="legend-item"><div class="legend-dot" style="background:' + c.color + ';border-radius:50%"></div>' + c.name + ' — ' + c.plano + '</div>';
+  }).join("");
+
+  var gridColor = "rgba(0,0,0,0.05)";
+  var tickColor = "#999";
+
+  var chart = new Chart(document.getElementById("chartCompare"), {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: campaigns.map(function(c) {
+        return {
+          label: c.plano,
+          data: c.daily.map(function(d) { return d.ctrTotal; }),
+          borderColor: c.color,
+          backgroundColor: "transparent",
+          pointBackgroundColor: c.color,
+          pointRadius: 4,
+          tension: 0.3
+        };
+      })
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: "#111" } },
+      scales: {
+        x: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor } },
+        y: { ticks: { color: tickColor, font: { size: 11 }, callback: function(v){ return v + "%"; } }, grid: { color: gridColor } }
+      }
+    }
+  });
+  activeCharts.push(chart);
+}
+
+/* ── DETALHES GERAIS E FILTROS ── */
+var currentFormat = "all";
+var currentPeriod = "all";
+var currentCustomFrom = null;
+var currentCustomTo = null;
+
+function buildDetail(c) {
+  destroyCharts();
+  currentFormat = "all";
+  currentPeriod = "all";
+  currentCustomFrom = null;
+  currentCustomTo = null;
+
+  document.getElementById("detail-header-title").textContent = "99Ads — " + c.name;
+  document.getElementById("detail-header-sub").textContent = "Fornecedor: 99 · Cliente: " + c.cliente;
+  document.getElementById("detail-chip").textContent = c.periodo;
+  document.getElementById("detail-cpm-val").textContent = c.cpm;
+
+  ["all","7d","custom"].forEach(function(p) {
+    var btn = document.getElementById("pbtn-" + p);
+    if (btn) btn.classList.toggle("active", p === "all");
+  });
+  document.getElementById("period-custom").style.display = "none";
+
+  var tabs = document.getElementById("format-tabs");
+  var tabsHTML = '<button class="format-tab active" onclick="setFormat(\'all\')" id="ftab-all">Todos</button>';
+  c.formats.forEach(function(f) {
+    tabsHTML += '<button class="format-tab" onclick="setFormat(\'' + f.id + '\')" id="ftab-' + f.id + '">' + f.label + '</button>';
+  });
+  tabs.innerHTML = tabsHTML;
+
+  buildDetailTable(c);
+  buildDetailCharts(c);
+  buildSegmentation(c);
+  buildDemographics(c);
+  buildPacingSection(c);
+}
+
+function getFilteredDaily(c) {
+  var fmtRows = currentFormat === "all" ? c.daily
+    : (c.formats.find(function(f){ return f.id === currentFormat; }) || { daily: [] }).daily;
+
+  if (currentPeriod === "all") return fmtRows;
+  if (currentPeriod === "7d") return fmtRows.slice(-7);
+  if (currentPeriod === "custom" && currentCustomFrom && currentCustomTo) {
+    return fmtRows.filter(function(r) {
+      var parts = r.date.split("/");
+      var d = new Date(2026, parseInt(parts[1])-1, parseInt(parts[0]));
+      return d >= currentCustomFrom && d <= currentCustomTo;
+    });
+  }
+  return fmtRows;
+}
+
+function getSummaryFromDaily(rows, c) {
+  if (!rows || !rows.length) return c.summary;
+  var impr = rows.reduce(function(a,r){ return a+r.impr; }, 0);
+  var cliques = rows.reduce(function(a,r){ return a+r.cliques; }, 0);
+  var alcance = rows.reduce(function(a,r){ return a+r.alcance; }, 0);
+  var ctrTotal = impr > 0 ? cliques/impr*100 : 0;
+  var totalSpend = rows.reduce(function(a,r){ return a+r.cliques*r.cpcTotal; }, 0);
+  var cpcTotal = cliques > 0 ? totalSpend/cliques : 0;
+  var freq = alcance > 0 ? impr/alcance : 0;
+  return { impr: impr, cliques: cliques, ctrTotal: ctrTotal, cpcTotal: cpcTotal, alcance: alcance, freq: freq };
+}
+
+function refreshDetail() {
+  var c = campaigns[currentCampaignIndex];
+  var rows = getFilteredDaily(c);
+  var s = getSummaryFromDaily(rows, c);
+
+  var pctDelivered = Math.round(s.impr / c.plan.totalImpr * 100);
+  var pctDays = Math.round(c.daily.length / c.plan.totalDays * 100);
+  var paceLabel = pctDelivered >= pctDays ? "No ritmo" : "Abaixo do ritmo";
+  var paceColor = pctDelivered >= pctDays ? "#16A34A" : "#DC2626";
+
+  var kpis = [
+    ["Impr. Contratadas", fmt(c.plan.totalImpr), "Meta total", "", null, null],
+    ["Impr. Entregues",   fmt(s.impr), pctDelivered + "% · " + paceLabel, "", pctDelivered, paceColor],
+    ["Cliques",           fmt(s.cliques), "Período selecionado"],
+    ["CTR Total",         s.ctrTotal.toFixed(2) + "%", "vs. baseline 15%", "kpi-accent"],
+    ["CPC Total",         "R$" + s.cpcTotal.toFixed(2), "Custo por clique"],
+    ["Alcance Único",     fmt(s.alcance), "Usuários únicos"],
+    ["Frequência",        s.freq.toFixed(2) + "x", "Média por usuário"]
+  ];
+
+  document.getElementById("detail-kpis").innerHTML = kpis.map(function(k) {
+    var bar = (k[4] != null) ? '<div class="pacing-kpi-bar"><div class="pacing-kpi-fill" style="width:' + Math.min(100,k[4]) + '%;background:' + k[5] + '"></div></div>' : '';
+    return '<div class="kpi-card"><div class="kpi-label">' + k[0] + '</div><div class="kpi-value ' + (k[3]||"") + '">' + k[1] + '</div><div class="kpi-sub">' + k[2] + '</div>' + bar + '</div>';
+  }).join("");
+
+  document.getElementById("detail-table-meta").textContent = c.cliente + " – " + c.name + " · " + c.plano;
+
+  buildDetailTableFromRows(rows);
+  refreshDetailCharts(rows);
+}
+
+function setFormat(fid) {
+  currentFormat = fid;
+  document.querySelectorAll(".format-tab").forEach(function(b){ b.classList.remove("active"); });
+  document.getElementById("ftab-" + fid).classList.add("active");
+  refreshDetail();
+}
+
+function setPeriod(p) {
+  currentPeriod = p;
+  ["all","7d","custom"].forEach(function(x) {
+    document.getElementById("pbtn-" + x).classList.toggle("active", x === p);
+  });
+  document.getElementById("period-custom").style.display = p === "custom" ? "flex" : "none";
+  if (p !== "custom") refreshDetail();
+}
+
+function toggleCustomPeriod() {
+  setPeriod(currentPeriod === "custom" ? "all" : "custom");
+}
+
+function applyCustomPeriod() {
+  var from = document.getElementById("period-from").value;
+  var to   = document.getElementById("period-to").value;
+  if (from && to) {
+    currentCustomFrom = new Date(from);
+    currentCustomTo   = new Date(to);
+    currentPeriod = "custom";
+    refreshDetail();
+  }
+}
+
+function buildDetailTable(c) {
+  buildDetailTableFromRows(c.daily);
+  refreshDetail();
+}
+
+function buildDetailTableFromRows(rows) {
+  var html = "";
+  rows.forEach(function(r) {
+    var ctrPct = Math.min(100, Math.round(r.ctrTotal / 45 * 100));
+    var hl = r.ctrTotal >= 15 ? "highlight-row" : "";
+    var ctrColor = r.ctrTotal >= 20 ? "#16A34A" : "#B8960A";
+    html += '<tr class="' + hl + '">' +
+      '<td>' + r.date + '</td>' +
+      '<td>' + fmt(r.impr) + '</td>' +
+      '<td>' + fmt(r.cliques) + '</td>' +
+      '<td><div class="ctr-bar-wrap"><div class="ctr-bar"><div class="ctr-fill" style="width:' + ctrPct + '%"></div></div><span style="color:' + ctrColor + ';font-weight:600">' + r.ctrTotal.toFixed(2) + '%</span></div></td>' +
+      '<td>R$' + r.cpcTotal.toFixed(2) + '</td>' +
+      '<td>' + fmt(r.alcance) + '</td>' +
+      '<td><span class="freq-badge">' + r.freq.toFixed(2) + 'x</span></td>' +
+    '</tr>';
+  });
+  document.getElementById("detail-tbody").innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:24px">Nenhum dado encontrado</td></tr>';
+}
+
+/* ── GRÁFICOS DO DETALHAMENTO ── */
+var detailChartRefs = {};
+
+function buildDetailCharts(c) {
+  refreshDetailCharts(c.daily);
+}
+
+function refreshDetailCharts(rows) {
+  var labels = rows.map(function(d) { return d.date; });
+  var gridColor = "rgba(0,0,0,0.05)";
+  var tickColor = "#999";
+
+  function makeOrUpdate(key, el, cfg) {
+    if (detailChartRefs[key]) {
+      try { detailChartRefs[key].destroy(); } catch(e){}
+    }
+    var ch = new Chart(document.getElementById(el), cfg);
+    detailChartRefs[key] = ch;
+    activeCharts.push(ch);
+  }
+
+  makeOrUpdate("ic", "dChartIC", {
+    type: "bar",
+    data: { labels: labels, datasets: [
+      { label: "Impressões", data: rows.map(function(d){ return d.impr; }), backgroundColor: "rgba(255,212,0,0.8)", yAxisID: "y" },
+      { label: "Cliques",    data: rows.map(function(d){ return d.cliques; }), backgroundColor: "rgba(59,130,246,0.8)", yAxisID: "y1" }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: {
+      x: { grid: { color: gridColor }, ticks: { color: tickColor } },
+      y: { grid: { color: gridColor }, ticks: { color: tickColor } },
+      y1: { position: "right", grid: { drawOnChartArea: false }, ticks: { color: tickColor } }
+    }}
+  });
+
+  makeOrUpdate("ctr", "dChartCTR", {
+    type: "line",
+    data: { labels: labels, datasets: [
+      { label: "CTR Total", data: rows.map(function(d){ return d.ctrTotal; }), borderColor: "#16A34A", backgroundColor: "rgba(22,163,74,0.05)", pointBackgroundColor: "#16A34A", fill: true, tension: 0.2 }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: {
+      x: { grid: { color: gridColor } },
+      y: { ticks: { callback: v => v + "%" }, grid: { color: gridColor } }
+    }}
+  });
+
+  makeOrUpdate("freq", "dChartFreq", {
+    type: "bar",
+    data: { labels: labels, datasets: [{ data: rows.map(function(d){ return d.freq; }), backgroundColor: "rgba(139,92,246,0.8)" }]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: gridColor } }, y: { grid: { color: gridColor } } } }
+  });
+
+  makeOrUpdate("cpc", "dChartCPC", {
+    type: "line",
+    data: { labels: labels, datasets: [{ data: rows.map(function(d){ return d.cpcTotal; }), borderColor: "#FFD400", tension: 0.2 }]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: gridColor } }, y: { ticks: { callback: v => "R$" + v }, grid: { color: gridColor } } } }
+  });
+}
+
+function toggleSeg() {
+  var card = document.getElementById("detail-seg");
+  var chevron = document.getElementById("seg-chevron");
+  var open = card.style.display !== "none";
+  card.style.display = open ? "none" : "flex";
+  chevron.classList.toggle("open", !open);
+  chevron.parentElement.classList.toggle("open", !open);
+}
+
+function buildSegmentation(c) {
+  var card = document.getElementById("detail-seg");
+  card.style.display = "none";
+  document.getElementById("seg-chevron").classList.remove("open");
+  
+  var seg = c.segmentation;
+  var groups = [
+    { title: "Público-alvo", icon: "👤", tags: seg.audience, style: "primary" },
+    { title: "Critério de veículo", icon: "🚗", tags: seg.vehicle, style: "" },
+    { title: "Status do motorista", icon: "✅", tags: seg.status, style: "green" },
+    { title: "Abrangência", icon: "📍", tags: seg.geography, style: "" },
+    { title: "Formato do anúncio", icon: "📱", tags: seg.format, style: "" }
+  ];
+  card.innerHTML = groups.map(g => '<div class="seg-group"><div class="seg-group-title">' + g.icon + ' ' + g.title + '</div><div class="seg-tags">' + g.tags.map(t => '<span class="seg-tag ' + g.style + '">' + t + '</span>').join("") + '</div></div>').join("");
+}
+
+/* ── DEMOGRAFIA ── */
+var demoCharts = {};
+var currentDemoTab = "impr";
+var currentDemoCampaign = null;
+
+function buildDemographics(c) {
+  currentDemoCampaign = c;
+  currentDemoTab = "impr";
+  document.getElementById("tab-impr").classList.add("active");
+  document.getElementById("tab-click").classList.remove("active");
+  renderDemoCharts(c.demographics.impr);
+}
+
+function switchDemoTab(tab) {
+  if (!currentDemoCampaign || tab === currentDemoTab) return;
+  currentDemoTab = tab;
+  document.getElementById("tab-impr").classList.toggle("active", tab === "impr");
+  document.getElementById("tab-click").classList.toggle("active", tab === "click");
+  
+  var d = currentDemoCampaign.demographics[tab];
+  demoCharts.gender.data.datasets[0].data = d.gender.map(x => x.value);
+  demoCharts.gender.update();
+  demoCharts.age.data.datasets[0].data = d.age.map(x => x.value);
+  demoCharts.age.update();
+  demoCharts.state.data.datasets[0].data = d.states.map(x => x.value);
+  demoCharts.state.update();
+  demoCharts.city.data.datasets[0].data = d.cities.map(x => x.value);
+  demoCharts.city.update();
+}
+
+function renderDemoCharts(d) {
+  ["gender","age","state","city"].forEach(k => { if(demoCharts[k]) demoCharts[k].destroy(); });
+  var tickColor = "#999";
+
+  demoCharts.gender = new Chart(document.getElementById("dChartGender"), {
+    type: "doughnut",
+    data: { labels: d.gender.map(x=>x.label), datasets: [{ data: d.gender.map(x=>x.value), backgroundColor: ["#3B82F6","#F97316","#D1D5DB"] }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: "60%", plugins: { legend: { position: 'bottom', labels: { color: tickColor, boxWidth: 10 } } } }
+  });
+
+  demoCharts.age = new Chart(document.getElementById("dChartAge"), {
+    type: "bar",
+    data: { labels: d.age.map(x=>x.label), datasets: [{ data: d.age.map(x=>x.value), backgroundColor: "rgba(255,212,0,0.8)" }] },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { max: 50, ticks: { callback: v => v + "%" } } } }
+  });
+
+  demoCharts.state = new Chart(document.getElementById("dChartState"), {
+    type: "bar",
+    data: { labels: d.states.map(x=>x.label), datasets: [{ data: d.states.map(x=>x.value), backgroundColor: "rgba(59,130,246,0.7)" }] },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
+
+  demoCharts.city = new Chart(document.getElementById("dChartCity"), {
+    type: "bar",
+    data: { labels: d.cities.map(x=>x.label), datasets: [{ data: d.cities.map(x=>x.value), backgroundColor: "rgba(139,92,246,0.7)" }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
+}
+
+/* ── PACING (PROJETADO VS REALIZADO) ── */
+var pacingChart = null;
+var currentPacingTab = "impr";
+var currentPacingCampaign = null;
+
+function buildPacingSection(c) {
+  if (!c.plan) return;
+  currentPacingCampaign = c;
+  currentPacingTab = "impr";
+
+  var plan = c.plan;
+  var realized = c.daily;
+  var daysDone  = realized.length;
+
+  var cumImpr = realized.reduce((a,d) => a + d.impr, 0);
+  var cumClick = realized.reduce((a,d) => a + d.cliques, 0);
+
+  var planImprToDate = plan.daily.slice(0, daysDone).reduce((a,d) => a + d.impr, 0);
+  var planClickToDate = plan.daily.slice(0, daysDone).reduce((a,d) => a + d.cliques, 0);
+
+  var pctImpr = Math.round(cumImpr / plan.totalImpr * 100);
+  var pctClick = Math.round(cumClick / plan.totalCliques * 100);
+  var pctDays = Math.round(daysDone / plan.totalDays * 100);
+
+  document.getElementById("pacing-kpis").innerHTML = 
+    pacingKpiCard("Dias Decorridos", daysDone + " / " + plan.totalDays, pctDays + "% do total", pctDays, "#3B82F6") +
+    pacingKpiCard("Impr. Realizadas", fmt(cumImpr), Math.round(cumImpr-planImprToDate) + " vs meta parcial", pctImpr, "#16A34A") +
+    pacingKpiCard("Meta Impr. Parcial", fmt(planImprToDate), "Esperado para hoje", Math.round(planImprToDate/plan.totalImpr*100), "#999") +
+    pacingKpiCard("Cliques Realizados", fmt(cumClick), Math.round(cumClick-planClickToDate) + " vs meta parcial", pctClick, "#16A34A") +
+    pacingKpiCard("Meta Cliques Parcial", fmt(planClickToDate), "Esperado para hoje", Math.round(planClickToDate/plan.totalCliques*100), "#999") +
+    pacingKpiCard("Previsão Final", fmt(Math.round(cumImpr / daysDone * plan.totalDays)), "Estimativa de entrega", Math.round((cumImpr / daysDone * plan.totalDays)/plan.totalImpr*100), "#FFD400");
+
+  renderPacingChart(c, "impr");
+}
+
+function pacingKpiCard(label, val, sub, pct, color) {
+  return '<div class="pacing-kpi"><div class="pacing-kpi-label">' + label + '</div><div class="pacing-kpi-value">' + val + '</div><div class="pacing-kpi-sub">' + sub + '</div><div class="pacing-kpi-bar"><div class="pacing-kpi-fill" style="width:'+Math.min(100, pct)+'%; background:'+color+'"></div></div></div>';
+}
+
+function switchPacingTab(tab) {
+  if (!currentPacingCampaign || tab === currentPacingTab) return;
+  currentPacingTab = tab;
+  document.getElementById("ptab-impr").classList.toggle("active", tab === "impr");
+  document.getElementById("ptab-click").classList.toggle("active", tab === "click");
+  renderPacingChart(currentPacingCampaign, tab);
+}
+
+function renderPacingChart(c, tab) {
+  if (pacingChart) pacingChart.destroy();
+  
+  var plan = c.plan;
+  var realized = c.daily;
+  var allDates = plan.daily.map(d => d.date);
+  var nDone = realized.length;
+
+  var planDaily = plan.daily.map(d => tab === "impr" ? d.impr : d.cliques);
+  var actDaily = allDates.map((_, i) => i < nDone ? (tab === "impr" ? realized[i].impr : realized[i].cliques) : null);
+
+  var planCum = [], actCum = [];
+  var ps = 0, as = 0;
+  allDates.forEach((_, i) => {
+    ps += planDaily[i]; planCum.push(ps);
+    if(i < nDone) { as += actDaily[i]; actCum.push(as); } else { actCum.push(null); }
+  });
+
+  pacingChart = new Chart(document.getElementById("dChartPacing"), {
+    type: "bar",
+    data: {
+      labels: allDates,
+      datasets: [
+        { type: "line", label: "Realizado (acum.)", data: actCum, borderColor: "#111", yAxisID: "yCum", order: 1 },
+        { type: "line", label: "Meta (acum.)", data: planCum, borderColor: "#ccc", borderDash: [5,4], yAxisID: "yCum", order: 2 },
+        { type: "bar", label: "Realizado diário", data: actDaily, backgroundColor: "rgba(59,130,246,0.5)", yAxisID: "yDaily", order: 3 },
+        { type: "bar", label: "Meta diária", data: planDaily, backgroundColor: "rgba(200,200,200,0.3)", yAxisID: "yDaily", order: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { autoSkip: true, maxTicksLimit: 12 } },
+        yCum: { position: "left", ticks: { callback: v => v >= 1000 ? (v/1000) + "k" : v } },
+        yDaily: { position: "right", grid: { drawOnChartArea: false } }
+      }
+    }
+  });
+}
+
+function destroyCharts() {
+  activeCharts.forEach(ch => { try{ ch.destroy(); }catch(e){} });
+  activeCharts = [];
+  if(pacingChart) pacingChart.destroy();
+}
+
+/* ── EXPORTS E FORMATADORES SIMPLES ── */
+function exportCSV() { alert("Exportando dados consolidados via CSV..."); }
+function exportPDF() { alert("Gerando relatório para impressão em PDF..."); }
+function fmt(n) { return n == null ? "—" : Number(n).toLocaleString("pt-BR"); }
+</script>
+</body>
+</html>
